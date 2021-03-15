@@ -1,0 +1,53 @@
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ~~~~~~~~~~~~~~~~~~~~~~~ Config ~~~~~~~~~~~~~~~~~~~~~~~ #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+Param
+(
+        # Anime series folder path
+        [Parameter(Mandatory=$false, 
+                   Position=0)]
+        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $series_path = "E:\Series",
+
+        # Torrent defalt download path
+        [Parameter(Mandatory=$false, 
+                   Position=1)]
+        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $torrent_default_download_path = "E:\",
+
+        # Filter Type
+        [Parameter(Mandatory=$false, 
+                   Position=3)]
+        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
+        [ValidateSet("No filter", "No remakes", "Trusted only")]
+        [string]
+        $filter_type = "Trusted only",
+
+        # Episode quality
+        [Parameter(Mandatory=$false, 
+                   Position=3)]
+        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
+        [ValidateSet("1080p", "720p", "480p")]
+        [string]
+        $episode_quality = "1080p",
+
+        # Uploaders
+        [Parameter(Mandatory=$false, 
+                   Position=4)]
+        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $uploaders = @('Erai-raws','SSA','SmallSizedAnimations')
+)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# ~~~~~~~~~~~~~~~~~~~~~ Don't Touch ~~~~~~~~~~~~~~~~~~~~ #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
