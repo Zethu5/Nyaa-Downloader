@@ -116,3 +116,30 @@ foreach($show_being_watched in $shows_being_watched)
 }
 
 Write-Host
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Get episodes that exist in each show folder that is being watched
+
+$shows_episodes_in_folder = @{}
+
+foreach($show_being_watched in $shows_being_watched)
+{
+    [string] $show_name = $show_being_watched -replace $regex_episode_indicator,""
+
+    $show_being_watched -match $regex_episode_indicator | Out-Null
+    $Matches[0] -match "\d+" | Out-Null
+    [string] $show_episode_need_to_see = $Matches[0]
+
+    [string[]] $episodes_in_folder = Get-ChildItem -LiteralPath "$series_path\$show_being_watched" `
+                                                    -Recurse |`
+                                     Select-Object -ExpandProperty Name | % {
+                                        if($_ -match "(\s+)?\-(\s+)?\d+.+\.\w+$")
+                                        {
+                                            $_ -match $regex_episode_indicator | Out-Null
+                                            $Matches[0] -match "\d+" | Out-Null
+                                            $Matches[0] -replace "^0",""
+                                        }
+                                     }
+
+    $shows_episodes_in_folder.Add($show_name,$episodes_in_folder) | Out-Null
+}
