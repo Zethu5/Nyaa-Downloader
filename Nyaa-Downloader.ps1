@@ -143,3 +143,119 @@ foreach($show_being_watched in $shows_being_watched)
 
     $shows_episodes_in_folder.Add($show_name,$episodes_in_folder) | Out-Null
 }
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Get the magnet torrent for each show episode
+
+[string] $nyaa_url = "https://nyaa.si/"
+[string] $filter_value = @{"No filter"="0";"No remakes"="1";"Trusted only"="2"}.$filter_type
+[string] $category_value = "1_2"
+[int] $num_torrents_downloading = 0
+$shows_episodes_found = @{}
+$file_names_and_where_to_put_them = @{}
+
+
+Write-Host "[INFO] Getting torrent magnet link for each show" -ForegroundColor Yellow -BackgroundColor DarkMagenta
+
+# check if the site is up
+try
+{
+    Invoke-WebRequest -Uri $nyaa_url | Out-Null
+}
+catch
+{
+    Write-Host "[     " -NoNewline -ForegroundColor Cyan
+    Write-Host "ERROR" -NoNewline -ForegroundColor Red -BackgroundColor Black
+    Write-Host "     ] " -NoNewline -ForegroundColor Cyan
+    Write-Host "Couldn't reach $nyaa_url, site down?" -ForegroundColor Red -BackgroundColor Black
+    break
+}
+
+:outer foreach($show_to_search in $shows_to_search)
+{
+    [bool] $found_some_episode_for_show = $false
+
+    foreach($uploader in $uploaders)
+    {
+        [int]    $page_index = 1
+        [bool]   $reached_end = $false
+        [string] $query = "[$uploader] $show_to_search $episode_quality"
+
+        while(!$reached_end)
+        {
+            [string] $full_url = "$nyaa_url`?f=$filter_value&c=$category_value&q=$query&p=$page_index"
+            $page = Invoke-WebRequest -Uri $full_url
+
+            if(($page.ParsedHtml.IHTMLDocument3_getElementsByTagName("tr") | ? {$_.className -eq "success"} | `
+               Measure-Object | Select-Object -ExpandProperty Count) -eq 0)
+            {
+                $reached_end = $true
+                continue
+            }
+
+            $page_episodes = $page.ParsedHtml.IHTMLDocument3_getElementsByTagName("tr") | ? {$_.className -eq "success"}
+
+            foreach($page_episode in $page_episodes)
+            {
+                # Episode file name on site
+                if($page_episode.children[1].children.length -eq 1)
+                {
+                    [string] $page_episode_name = $page_episode.children[1].innerText
+                } else {
+                    [string] $page_episode_name = $page_episode.children[1].children[1].innerText
+                }
+
+                $Matches.Clear()
+
+                # Episode number
+                $page_episode_name -match "\s+?\-\s+?\d+(v\d+)?\s+" | Out-Null
+                $Matches[0] -match "\d+" | Out-Null
+                [int] $page_episode_number = $Matches[0]
+
+                $Matches.Clear()
+
+                # Episode magnet link
+                [string] $page_episode_magnet_link = ($page_episode.children[2].children[1] | ? {$_.href -match "^magnet"}).href
+
+                $Matches.Clear()
+
+                if($page_episode_number -ge $shows_episode_to_search[$show_to_search] -and `
+                   $page_episode_number -notin $shows_episodes_in_folder[$show_to_search] -and `
+                   $shows_episodes_found.$show_to_search -notcontains $page_episode_number)
+                {
+                    if(!$shows_episodes_found.$show_to_search)
+                    {
+                        $shows_episodes_found.Add($show_to_search,@($page_episode_number))
+                    }
+                    else
+                    {
+                        $shows_episodes_found.$show_to_search += $page_episode_number
+                    }
+
+                    $file_names_and_where_to_put_them.Add($page_episode_name,($shows_folders -match ($show_to_search -replace "\(","\(" -replace "\)","\)" -replace "\[","\[" -replace "\]","\]")).Name)
+                    start $page_episode_magnet_link
+
+                    Write-Host "[  " -NoNewline -ForegroundColor Cyan
+                    Write-Host "DOWNLOADING" -NoNewline -ForegroundColor Yellow -BackgroundColor Black
+                    Write-Host "  ] " -NoNewline -ForegroundColor Cyan
+                    Write-Host "[$uploader] $show_to_search - $page_episode_number [$episode_quality].mkv" -ForegroundColor Cyan
+
+                    $num_torrents_downloading++
+                    $found_some_episode_for_show = $true
+                }
+            }
+
+            $page_index++
+        }
+    }
+
+    if(!$found_some_episode_for_show)
+    {
+        Write-Host "[ " -NoNewline -ForegroundColor Cyan
+        Write-Host "NOTHING FOUND" -NoNewline -ForegroundColor Yellow -BackgroundColor Black
+        Write-Host " ] " -NoNewline -ForegroundColor Cyan
+        Write-Host "$show_to_search" -ForegroundColor DarkCyan
+    }
+}
+
+Write-Host ""
