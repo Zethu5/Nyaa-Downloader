@@ -55,6 +55,10 @@ For the script to work `BitTorrent/UTorrent` should be used and configured as su
    
    You can install the latest version: [.NET Framework](https://dotnet.microsoft.com/download/dotnet-framework)
    
+* Microsoft Office / Office 365
+
+   This requirement was a doozy for me as well, there are some Powershell functions that will not work unless Microsoft Office / Office 365 are installed
+   
 ## Script Configuration
 
 ### Variables
