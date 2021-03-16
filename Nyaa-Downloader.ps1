@@ -325,11 +325,11 @@ if($num_torrents_downloading -gt 0)
             Write-Host "Still downloading" -ForegroundColor Cyan
             $sleep_counter++
         }
-    }
-
-    if($pause_script_at_end) { pause }
+    }    
 }
 else
 {
     Write-Host "[INFO] Didn't find any episode to download, exiting" -ForegroundColor Yellow -BackgroundColor DarkMagenta
 }
+
+if($pause_script_at_end) { pause }
