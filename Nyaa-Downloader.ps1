@@ -44,7 +44,7 @@ Param
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [string[]]
-        $uploaders = @('Erai-raws','SSA','SmallSizedAnimations')
+        $uploaders = @("Erai-raws","SSA","SmallSizedAnimations")
 )
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -205,6 +205,8 @@ catch
                     [string] $page_episode_name = $page_episode.children[1].children[1].innerText
                 }
 
+                $page_episode_name = $page_episode_name.Trim()
+
                 $Matches.Clear()
 
                 # Episode number
@@ -259,3 +261,65 @@ catch
 }
 
 Write-Host ""
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Listen to torrents and move episodes to their destinations
+
+[int] $torrent_check_internval = 1
+
+if($num_torrents_downloading -gt 0)
+{
+    Write-Host "[INFO] Listening to torrents" -ForegroundColor Yellow -BackgroundColor DarkMagenta
+
+    [int] $num_torrents_finished = 0
+    [int] $sleep_counter = 1
+
+    while($num_torrents_finished -lt $num_torrents_downloading)
+    {
+        foreach($record in $file_names_and_where_to_put_them.GetEnumerator())
+        {
+            $Matches.Clear()
+            $record.Key -match "$(("\s+?\-\s+?" -replace "\(","\(" -replace "\)","\)"))\d+" | Out-Null
+            $Matches[0] -match "\d+$" | Out-Null
+            
+            [string] $file_episode_number = $Matches[0]
+            [string] $file_prefix = "$($record.Value -replace "\s+?\-\s+?\d+$") - $file_episode_number.mkv"
+            
+            try
+            {
+                Move-Item -LiteralPath "$torrent_default_download_path$($record.Key)" -Destination "$series_path\$($record.Value)\$file_prefix"
+                $num_torrents_finished++
+                Write-Host "[    " -NoNewline -ForegroundColor Cyan
+                Write-Host "MOVED" -NoNewline -ForegroundColor Yellow -BackgroundColor Black
+                Write-Host "      ] " -NoNewline -ForegroundColor Cyan
+                Write-Host " $torrent_default_download_path$($record.Key)" -NoNewline -ForegroundColor Yellow -BackgroundColor Black
+                Write-Host " " -NoNewline
+                Write-Host "---->" -NoNewline -ForegroundColor Green
+                Write-Host " " -NoNewline
+                Write-Host "$series_path\$($record.Value) - $($shows_episode_to_search.$show_to_search)\$file_prefix" -ForegroundColor Yellow -BackgroundColor Black
+            }
+            catch{}
+        }
+
+        if($num_torrents_finished -ne $num_torrents_downloading)
+        {
+            Start-Sleep -Seconds (60 * $torrent_check_internval)
+            Write-Host "[  " -NoNewline -ForegroundColor Cyan
+            Write-Host "$($sleep_counter * $torrent_check_internval) minutes" -NoNewline -ForegroundColor Yellow -BackgroundColor Black
+
+            for([int]$k = 0;$k -lt (5 - ($sleep_counter * $torrent_check_internval).ToString().Length);$k++)
+            {
+                Write-Host " " -NoNewline
+            }
+
+            Write-Host "] " -NoNewline -ForegroundColor Cyan
+            Write-Host "Still downloading" -ForegroundColor Cyan
+            $sleep_counter++
+        }
+    }
+}
+else
+{
+    Write-Host "[INFO] Didn't find any episode to download, exiting" -ForegroundColor Yellow -BackgroundColor DarkMagenta
+}
