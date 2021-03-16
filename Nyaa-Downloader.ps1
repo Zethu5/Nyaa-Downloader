@@ -20,6 +20,14 @@ Param
         [string]
         $torrent_default_download_path = "E:\",
 
+        # Flag to pause script at the end (debug etc...)
+        [Parameter(Mandatory=$false, 
+                   Position=1)]
+        [ValidateNotNull()]
+        [ValidateNotNullOrEmpty()]
+        [boolean]
+        $pause_script_at_end = $false,
+
         # Filter Type
         [Parameter(Mandatory=$false, 
                    Position=3)]
@@ -318,6 +326,8 @@ if($num_torrents_downloading -gt 0)
             $sleep_counter++
         }
     }
+
+    if($pause_script_at_end) { pause }
 }
 else
 {
